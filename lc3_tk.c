@@ -1,3 +1,9 @@
+/* 
+ * author: https://github.com/beeldscherm
+ * file:   cl3_tk.h
+ * date:   24/08/2025
+ */
+
 #include "lc3_tk.h"
 #include <ctype.h>
 #include <string.h>
@@ -29,11 +35,12 @@ bool isTokenChar(char c) {
 
 
 OptInt toBase(uint8_t digit, uint8_t base) {
+    // I LOVE PRECALCULATION
     static const int8_t BASE_CONVERT_MAP[256] = {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-        0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1, 
+         0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1, 
         -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
         25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, 
         -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
@@ -64,6 +71,7 @@ OptInt getNumber(Token tk, String str) {
     int8_t factor = 1;
     OptInt ret = {0, false};
 
+    // Deduce base from first character
     if (str.ptr[idx] == '#') {
         idx++;
     } else if (str.ptr[idx] == 'X' || str.ptr[idx] == 'x') {
@@ -76,6 +84,7 @@ OptInt getNumber(Token tk, String str) {
         return ret;
     }
 
+    // Deal with negative numbers
     if ((tk.start + tk.sz) > idx && str.ptr[idx] == '-') {
         factor = -1;
         idx++;
@@ -86,6 +95,7 @@ OptInt getNumber(Token tk, String str) {
 
     ret.set = true;
 
+    // Calculate number value
     for (size_t i = idx; ret.set && i < (tk.start + tk.sz); i++) {
         OptInt digit = toBase(str.ptr[i], base);
         ret.set = digit.set;
@@ -135,6 +145,7 @@ char *tokenString(Token tk, String str) {
     if (!validToken(tk, str)) {
         return calloc(1, 1);
     }
+
     char *c_str = malloc(tk.sz + 1);
     memcpy(c_str, str.ptr + tk.start, tk.sz);
     c_str[tk.sz] = '\0';
@@ -194,6 +205,7 @@ bool isEscaped(char c) {
 }
 
 
+// Deal with escape codes
 char getEscaped(char c) {
     switch (c) {
         case 'n': return '\n';
@@ -210,6 +222,7 @@ char getEscaped(char c) {
 String generateLiteral(Token tk, String str) {
     String ret = newString();
 
+    // Loop while properly handling escaped characters
     for (int i = tk.start + 1; i < (tk.start + tk.sz) && str.ptr[i] != '"'; i++) {
         char c1 = str.ptr[i];
         char c2 = str.ptr[i + 1];
@@ -223,19 +236,4 @@ String generateLiteral(Token tk, String str) {
     }
     
     return ret;
-}
-
-
-// Calculates the length of a string literal
-size_t strlitLength(Token tk, String str) {
-    size_t length = tk.sz;
-
-    // Make sure to read escaped characters as a single char
-    for (size_t i = tk.start; i < (tk.start + tk.sz - 1); i++) {
-        if (str.ptr[i] == '\\' && isEscaped(str.ptr[i + 1])) {
-            length--;
-            i++;
-        }
-    }
-    return length;
 }

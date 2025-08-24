@@ -1,11 +1,12 @@
-/* file:    main.c
- * date:    22/08/2025
- * version: 1.2.1
+/* 
+ * author: https://github.com/beeldscherm
+ * file:   main.c
+ * date:   24/08/2025
  */
 
-/* Description: 
- * Small LC3 assembler
- * Unfinished
+/* 
+ * Description: 
+ * Delegates command-line arguments to the LC3 command interpreter
  */
 
 #include "lc3_cmd.h"
