@@ -302,7 +302,7 @@ void objectify(LC3_Unit *unit) {
             }
         }
 
-        stmt.type = (stmt.instr->instrValue < INSTR_AS_ADD) ? STMT_PSEUD : STMT_INSTR;
+        stmt.type = (stmt.instr->instr < INSTR_AS_ADD) ? STMT_PSEUD : STMT_INSTR;
         stmt.orig = tkn;
 
         // Check if the amount of tokens is right

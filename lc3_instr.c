@@ -1,11 +1,15 @@
+/* 
+ * author: https://github.com/beeldscherm
+ * file:   lc3_instr.c
+ * date:   24/08/2025
+ */
+
 #include "lc3_instr.h"
 #include "lc3_err.h"
 #include "lc3_tk.h"
+
 #include <ctype.h>
 #include <string.h>
-
-
-static char UPPER[INSTR_NAME_MAX_LEN + 1] = {0};
 
 
 // This struct is used for working with werid number lengths
@@ -19,6 +23,7 @@ typedef struct Converter {
 
 // Turn C string into instruction value
 const InstructionDefinition *getInstructionIndex(Token tk, String str) {
+    char upper[INSTR_NAME_MAX_LEN + 1];
     const InstructionDefinition *ret = NULL;
 
     // No instructions shorter than 2 or longer than 9 characters
@@ -31,18 +36,18 @@ const InstructionDefinition *getInstructionIndex(Token tk, String str) {
         char c = str.ptr[tk.start + i];
 
         if (isalpha(c) || c == '.') {
-            UPPER[i] = toupper(c);
+            upper[i] = toupper(c);
         } else {
             // Non-letter can't be instruction
             return ret;
         }
     }
 
-    UPPER[tk.sz] = '\0';
+    upper[tk.sz] = '\0';
 
     for (uint8_t i = 0; i < INSTR_AMT; i++) {
         // Nooo! An O(n) algorithm in my code? Why! Why! Why! Works fine though
-        if (INSTRUCTION_LIST[i].nameLength == tk.sz && strncmp(UPPER, INSTRUCTION_LIST[i].name, tk.sz) == 0) {
+        if (INSTRUCTION_LIST[i].nameLength == tk.sz && strncmp(upper, INSTRUCTION_LIST[i].name, tk.sz) == 0) {
             ret = &INSTRUCTION_LIST[i];
             break;
         }
@@ -52,6 +57,7 @@ const InstructionDefinition *getInstructionIndex(Token tk, String str) {
 }
 
 
+// Returns required debug info for provided statement
 Token getDebugLine(LC3_Unit *unit, const Statement stmt) {
     if (!unit->ctx || !unit->ctx->storeDebug) {
         Token ret = {0};
@@ -69,6 +75,7 @@ Token getDebugLine(LC3_Unit *unit, const Statement stmt) {
 }
 
 
+// Apply .ORIG pseud to unit
 void interpretOrig(LC3_Unit_Ptr unit, const Statement stmt, OptInt *addr) {
     if (addr->set) {
         LC3_TokenError(unit, stmt.line, stmt.orig, "origin already set, use .END to end previous section", LC3_ERR_SHOW_LINE);
@@ -85,6 +92,7 @@ void interpretOrig(LC3_Unit_Ptr unit, const Statement stmt, OptInt *addr) {
 }
 
 
+// Apply .BLKW pseud to unit
 void interpretBlkw(LC3_Unit_Ptr unit, const Statement stmt, OptInt *addr) {
     int value = getNumber(stmt.args[0], unit->buf.ptr[stmt.line]).value;
 
@@ -105,6 +113,7 @@ void interpretBlkw(LC3_Unit_Ptr unit, const Statement stmt, OptInt *addr) {
 }
 
 
+// Apply .FILL pseud to unit
 void interpretFill(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
     ObjectLine value = {
         .instr = getNumber(stmt.args[0], unit->buf.ptr[stmt.line]).value,
@@ -117,6 +126,7 @@ void interpretFill(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
 }
 
 
+// Apply .STRINGZ pseud to unit
 void interpretStrz(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
     String lit = generateLiteral(stmt.args[0], unit->buf.ptr[stmt.line]);
 
@@ -137,8 +147,9 @@ void interpretStrz(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
 }
 
 
+// Apply pseud to unit and update address
 void interpretPseud(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
-    switch (stmt.instr->instrValue) {
+    switch (stmt.instr->instr) {
         case INSTR_PS_ORIG: // ORIG [num] sets address to num
             interpretOrig(unit, stmt, addr);
             break;
@@ -160,6 +171,7 @@ void interpretPseud(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
 }
 
 
+// This does some heavy-lifting during assembly
 void translateInstructionStatement(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
     Converter cast;
 
@@ -170,7 +182,7 @@ void translateInstructionStatement(LC3_Unit *unit, const Statement stmt, OptInt 
         .debug = {.line = stmt.line, .tk = getDebugLine(unit, stmt)}
     };
 
-    if (stmt.instr->instrValue < INSTR_AS_ADD) {
+    if (stmt.instr->instr < INSTR_AS_ADD) {
         unit->error = true;
         return;
     }
@@ -179,7 +191,7 @@ void translateInstructionStatement(LC3_Unit *unit, const Statement stmt, OptInt 
     String str = unit->buf.ptr[stmt.line];
 
     // Find instruction
-    switch (stmt.instr->instrValue) {
+    switch (stmt.instr->instr) {
         case INSTR_AS_RTI: // "RTI"
             ret.instr = 0x8000;
             break;
@@ -295,7 +307,7 @@ void translateInstructionStatement(LC3_Unit *unit, const Statement stmt, OptInt 
 
 
 void interpretStatement(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
-    if (stmt.instr->instrValue != INSTR_PS_ORIG && !addr->set) {
+    if (stmt.instr->instr != INSTR_PS_ORIG && !addr->set) {
         LC3_TokenError(unit, stmt.line, stmt.orig, "unable to determine address for token", LC3_ERR_SHOW_LINE | LC3_ERR_SHOW_TK);
         return;
     }

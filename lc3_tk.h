@@ -1,6 +1,6 @@
 /* 
  * author: https://github.com/beeldscherm
- * file:   cl3_tk.h
+ * file:   lc3_tk.h
  * date:   24/08/2025
  */
 
@@ -35,10 +35,6 @@ typedef enum TokenType {
 typedef struct Token {
     token_t start, sz;
 } Token;
-
-
-// At least it works
-#include "lc3_asm.h"
 
 
 // Translates token into optional number

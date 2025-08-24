@@ -1,11 +1,27 @@
+/* 
+ * author: https://github.com/beeldscherm
+ * file:   lc3_instr.h
+ * date:   24/08/2025
+ */
+
+/* 
+ * Description: 
+ * Instruction-related structs and functions
+ */
+
 #pragma once
 #include <stdint.h>
+
 #include "lc3_asm.h"
-#include "lc3_tk.h"
 #include "lib/optional.h"
 
+// Total amount of instructions
 #define INSTR_AMT (37)
+
+// Maximum amount of arguments an instruction can have
 #define INSTR_MAX_ARGL (3)
+
+// Maximum length of an instruction name
 #define INSTR_NAME_MAX_LEN (9)
 
 
@@ -38,272 +54,274 @@ typedef enum Instruction {
 } Instruction;
 
 
+// Stores information about an instruction
 typedef struct InstructionDefinition {
-    const char *name;               // Must be ALL-CAPS for recognition to work
-    const int nameLength;
-    const Instruction instrValue;
-    const int argc;
-    const TokenType argl[INSTR_MAX_ARGL /* TODO Make nicer */];
+    const char *name;                       // Must be ALL-CAPS for recognition to work
+    const int nameLength;                   // Length of name
+    const Instruction instr;                // Enum instruction value
+    const int argc;                         // Amount of arguments
+    const TokenType argl[INSTR_MAX_ARGL];   // Argument token types
 } InstructionDefinition;
 
 
-static const InstructionDefinition INSTRUCTION_LIST[INSTR_AMT] = {
+// All LC3 instructions and pseudo-instructions
+static const InstructionDefinition INSTRUCTION_LIST[INSTR_AMT] __attribute__((unused))  = {
     {
         .name = ".ORIG",
         .nameLength = 5,
-        .instrValue = INSTR_PS_ORIG,
+        .instr = INSTR_PS_ORIG,
         .argc = 1,
         .argl = {TOKEN_NUM},
     },
     {
         .name = ".BLKW",
         .nameLength = 5,
-        .instrValue = INSTR_PS_BLKW,
+        .instr = INSTR_PS_BLKW,
         .argc = 1,
         .argl = {TOKEN_NUM},
     },
     {
         .name = ".FILL",
         .nameLength = 5,
-        .instrValue = INSTR_PS_FILL,
+        .instr = INSTR_PS_FILL,
         .argc = 1,
         .argl = {TOKEN_NUM},
     },
     {
         .name = ".STRINGZ",
         .nameLength = 8,
-        .instrValue = INSTR_PS_STR,
+        .instr = INSTR_PS_STR,
         .argc = 1,
         .argl = {TOKEN_STR},
     },
     {
         .name = ".EXTERN",
         .nameLength = 8,
-        .instrValue = INSTR_PS_EXTN,
+        .instr = INSTR_PS_EXTN,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = ".END",
         .nameLength = 4,
-        .instrValue = INSTR_PS_END,
+        .instr = INSTR_PS_END,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "ADD",
         .nameLength = 3,
-        .instrValue = INSTR_AS_ADD,
+        .instr = INSTR_AS_ADD,
         .argc = 3,
         .argl = {TOKEN_REG, TOKEN_REG, TOKEN_REG | TOKEN_NUM},
     },
     {
         .name = "AND",
         .nameLength = 3,
-        .instrValue = INSTR_AS_AND,
+        .instr = INSTR_AS_AND,
         .argc = 3,
         .argl = {TOKEN_REG, TOKEN_REG, TOKEN_REG | TOKEN_NUM},
     },
     {
         .name = "BR",
         .nameLength = 2,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRN",
         .nameLength = 3,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRZ",
         .nameLength = 3,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRP",
         .nameLength = 3,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRNZ",
         .nameLength = 4,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRNP",
         .nameLength = 4,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRZP",
         .nameLength = 4,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "BRNZP",
         .nameLength = 5,
-        .instrValue = INSTR_AS_BR,
+        .instr = INSTR_AS_BR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "JMP",
         .nameLength = 3,
-        .instrValue = INSTR_AS_JMP,
+        .instr = INSTR_AS_JMP,
         .argc = 1,
         .argl = {TOKEN_REG},
     },
     {
         .name = "RET",
         .nameLength = 3,
-        .instrValue = INSTR_AS_JMP,
+        .instr = INSTR_AS_JMP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "JSR",
         .nameLength = 3,
-        .instrValue = INSTR_AS_JSR,
+        .instr = INSTR_AS_JSR,
         .argc = 1,
         .argl = {TOKEN_KEY},
     },
     {
         .name = "JSRR",
         .nameLength = 4,
-        .instrValue = INSTR_AS_JSR,
+        .instr = INSTR_AS_JSR,
         .argc = 1,
         .argl = {TOKEN_REG},
     },
     {
         .name = "LD",
         .nameLength = 2,
-        .instrValue = INSTR_AS_LD,
+        .instr = INSTR_AS_LD,
         .argc = 2,
         .argl = {TOKEN_REG, TOKEN_KEY},
     },
     {
         .name = "LDI",
         .nameLength = 3,
-        .instrValue = INSTR_AS_LDI,
+        .instr = INSTR_AS_LDI,
         .argc = 2,
         .argl = {TOKEN_REG, TOKEN_KEY},
     },
     {
         .name = "LDR",
         .nameLength = 3,
-        .instrValue = INSTR_AS_LDR,
+        .instr = INSTR_AS_LDR,
         .argc = 3,
         .argl = {TOKEN_REG, TOKEN_REG, TOKEN_NUM},
     },
     {
         .name = "LEA",
         .nameLength = 3,
-        .instrValue = INSTR_AS_LEA,
+        .instr = INSTR_AS_LEA,
         .argc = 2,
         .argl = {TOKEN_REG, TOKEN_KEY},
     },
     {
         .name = "NOT",
         .nameLength = 3,
-        .instrValue = INSTR_AS_NOT,
+        .instr = INSTR_AS_NOT,
         .argc = 2,
         .argl = {TOKEN_REG, TOKEN_REG},
     },
     {
         .name = "RTI",
         .nameLength = 3,
-        .instrValue = INSTR_AS_RTI,
+        .instr = INSTR_AS_RTI,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "ST",
         .nameLength = 2,
-        .instrValue = INSTR_AS_ST,
+        .instr = INSTR_AS_ST,
         .argc = 2,
         .argl = {TOKEN_REG, TOKEN_KEY},
     },
     {
         .name = "STI",
         .nameLength = 3,
-        .instrValue = INSTR_AS_STI,
+        .instr = INSTR_AS_STI,
         .argc = 2,
         .argl = {TOKEN_REG, TOKEN_KEY},
     },
     {
         .name = "STR",
         .nameLength = 3,
-        .instrValue = INSTR_AS_STR,
+        .instr = INSTR_AS_STR,
         .argc = 3,
         .argl = {TOKEN_REG, TOKEN_REG, TOKEN_NUM},
     },
     {
         .name = "GETC",
         .nameLength = 4,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "HALT",
         .nameLength = 4,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "OUT",
         .nameLength = 3,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "PUTC",
         .nameLength = 4,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "PUTS",
         .nameLength = 4,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "PUTSP",
         .nameLength = 5,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     },
     {
         .name = "TRAP",
         .nameLength = 4,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 1,
         .argl = {TOKEN_NUM},
     },
     {
         .name = "IN",
         .nameLength = 2,
-        .instrValue = INSTR_AS_TRAP,
+        .instr = INSTR_AS_TRAP,
         .argc = 0,
         .argl = {0},
     }
@@ -313,7 +331,8 @@ static const InstructionDefinition INSTRUCTION_LIST[INSTR_AMT] = {
 // Turn C string into instruction
 const InstructionDefinition *getInstructionIndex(Token tk, String str);
 
-// Interpret statment, update address
+// Convert statement into objec line(s) and update address value
 void interpretStatement(struct LC3_Unit *unit, const Statement stmt, OptInt *addr);
 
+// Combines instruction with label value (linking)
 void resolveInstruction(struct LC3_Unit *unit, ObjectLine *obj, uint16_t addr, uint16_t label);
