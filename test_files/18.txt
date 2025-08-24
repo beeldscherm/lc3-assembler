@@ -1,0 +1,7 @@
+.ORIG x3000
+BRnzp TooFar
+.END
+
+.ORIG x4000
+TooFar .FILL #48
+.END

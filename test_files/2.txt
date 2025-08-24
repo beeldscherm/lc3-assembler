@@ -1,0 +1,59 @@
+.ORIG x3000
+
+JSR ReadNum
+HALT
+
+; Reads a positive integer from the console
+; The integer is written to R1
+ReadNum
+    ; Store needed registers
+    ST R0, ReadNumR0
+    ST R2, ReadNumR2
+    ST R3, ReadNumR3
+    
+    ; For conversion
+    LD R3, ToDigit
+    
+    ; For result
+    AND R1, R1, #0
+
+    ; Read until no characters left
+    ReadNumLoop
+        GETC
+        PUTC
+        
+        ; Check if valid digit and convert
+        ADD R0, R0, R3
+        BRn ReadNumDone
+        
+        ADD R2, R0, #-9
+        BRp ReadNumDone
+        
+        ; R0 now contains actual digit
+        ; We multiply R1 (intermediate result) by 10
+        ADD R1, R1, R1
+        ADD R2, R1, R1
+        ADD R2, R2, R2
+        ADD R1, R1, R2 ; 2xR1 + 8xR1
+
+        ; And add the new digit
+        ADD R1, R1, R0
+
+        BRnzp ReadNumLoop
+
+    ReadNumDone
+
+    ; pop registers
+    LD R3, ReadNumR3
+    LD R2, ReadNumR2
+    LD R0, ReadNumR0
+RET
+
+ToDigit .FILL #-48
+
+; Storage for ReadNum
+ReadNumR0 .BLKW #1
+ReadNumR2 .BLKW #1
+ReadNumR3 .BLKW #1
+
+.END

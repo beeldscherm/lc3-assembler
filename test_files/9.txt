@@ -1,0 +1,314 @@
+.ORIG x3000
+
+; Read
+JSR ReadNum
+AND R0, R1, R1
+JSR ReadNum
+
+; Print
+JSR PrintRange
+
+HALT
+
+; Prints all numbers in the range [R0, R1]
+PrintRange
+    ST R0, PrintRangeR0
+    ST R1, PrintRangeR1
+    ST R2, PrintRangeR2
+    ST R7, PrintRangeR7
+
+    NOT R2, R0
+    ADD R2, R2, #1
+    ADD R2, R1, R2
+
+    PrintRangeLoop
+        BRz PrintRangeLast
+
+        JSR PrintNum
+
+        AND R1, R0, R0
+        LD R0, Space
+        PUTC
+        AND R0, R1, R1
+
+        ADD R0, R0, #1
+        ADD R2, R2, #-1
+        BRnzp PrintRangeLoop
+
+    PrintRangeLast
+
+    JSR PrintNum
+
+    LD R0, Newline
+    PUTC
+
+    LD R7, PrintRangeR7
+    LD R2, PrintRangeR2
+    LD R1, PrintRangeR1
+    LD R0, PrintRangeR0
+RET
+
+Space   .FILL x20
+Newline .FILL x0A
+
+; Storage for PrintRange
+PrintRangeR0 .BLKW #1
+PrintRangeR1 .BLKW #1
+PrintRangeR2 .BLKW #1
+PrintRangeR7 .BLKW #1
+
+
+; Prints the number in R0 to the console
+PrintNum
+    ST R0, PrintNumR0
+    ST R1, PrintNumR1
+    ST R2, PrintNumR2
+    ST R3, PrintNumR3
+    ST R4, PrintNumR4
+    ST R5, PrintNumR5
+    ST R7, PrintNumR7
+
+    ; R4 contains start of string
+    LEA R4, PrintNumStr
+    ADD R4, R4, #4
+
+    LD R1, PrintNum10
+    LD R5, ToASCII
+
+    PrintNumLoop
+        ; Divide R0 by 10, modulo is digit
+        JSR Divmod
+        ; Save digit
+        ADD R3, R3, R5
+        STR R3, R4, #0
+
+        AND R0, R2, R2
+        BRz PrintNumDone
+
+        ADD R4, R4, #-1
+        BRnzp PrintNumLoop
+
+    PrintNumDone
+
+    AND R0, R4, R4
+    PUTS
+
+    LD R7, PrintNumR7
+    LD R5, PrintNumR5
+    LD R4, PrintNumR4
+    LD R3, PrintNumR3
+    LD R2, PrintNumR2
+    LD R1, PrintNumR1
+    LD R0, PrintNumR0
+RET
+
+ToASCII    .FILL #48
+PrintNum10 .FILL #10
+
+; Storage for PrintNum
+PrintNumR0 .BLKW #1
+PrintNumR1 .BLKW #1
+PrintNumR2 .BLKW #1
+PrintNumR3 .BLKW #1
+PrintNumR4 .BLKW #1
+PrintNumR5 .BLKW #1
+PrintNumR7 .BLKW #1
+
+PrintNumStr .BLKW #6
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; From exercise 1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Reads a positive integer from the console
+; The integer is written to R1
+ReadNum
+    ; Store needed registers
+    ST R0, ReadNumR0
+    ST R2, ReadNumR2
+    ST R3, ReadNumR3
+
+    ; For conversion
+    LD R3, ToDigit
+
+    ; For result
+    AND R1, R1, #0
+
+    ; Read until no characters left
+    ReadNumLoop
+        GETC
+        PUTC
+
+        ; Check if valid digit and convert
+        ADD R0, R0, R3
+        BRn ReadNumDone
+
+        ADD R2, R0, #-9
+        BRp ReadNumDone
+
+        ; R0 now contains actual digit
+        ; We multiply R1 (intermediate result) by 10
+        ADD R1, R1, R1
+        ADD R2, R1, R1
+        ADD R2, R2, R2
+        ADD R1, R1, R2 ; 2xR1 + 8xR1
+
+        ; And add the new digit
+        ADD R1, R1, R0
+
+        BRnzp ReadNumLoop
+
+    ReadNumDone
+
+    ; pop registers
+    LD R3, ReadNumR3
+    LD R2, ReadNumR2
+    LD R0, ReadNumR0
+RET
+
+ToDigit .FILL #-48
+
+; Storage for ReadNum
+ReadNumR0 .BLKW #1
+ReadNumR2 .BLKW #1
+ReadNumR3 .BLKW #1
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; From exercise 2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Performs division and modulo operations on R0 and R1
+; R2 = R0 / R1
+; R3 = R0 % R1
+Divmod
+    ST R0, DivmodR0
+    ST R1, DivmodR1
+    ST R4, DivmodR4
+    ST R5, DivmodR5
+    ST R6, DivmodR6
+    ST R7, DivmodR7
+
+    ; R1 == 1 ?
+    ADD R2, R1 #-1
+
+    BRp DivmodNot1
+        ; R1 == 1, so
+        ; R2 = (R0 / R1) == R0
+        ; R3 = (R0 % R1) == 0
+        AND R2, R0, R0
+        AND R3, R3, #0
+        BRnzp DivmodDone
+    DivmodNot1
+
+    ; R1 = -R1
+    NOT R1, R1
+    ADD R1, R1, #1
+
+    ; R1 >= R0 ?
+    ADD R3, R0, R1
+
+    BRp DivmodNotGE
+        BRn DivmodNE
+            ; R0 == R1, so
+            ; R2 = (R0 / R1) == 1
+            ; R3 = (R0 % R1) == 0
+            LD  R2, ONE
+            AND R3, R3, #0
+            BRnzp DivmodDone
+        DivmodNE
+        ; R0 > R1, so
+        ; R2 = (R0 / R1) == 0
+        ; R3 = (R0 % R1) == R0
+        AND R2, R2, #0
+        AND R3, R0, R0
+        BRnzp DivmodDone
+    DivmodNotGE
+
+    ; We now are sure R0 > R1
+    LEA R6, DivmodStack
+
+    ; For result
+    AND R2, R2, #0
+    AND R3, R0, R0
+
+    ; Save base R1 in R0
+    AND R0, R1, R1
+    ; For storing the powers of 2
+    LD R5, ONE
+
+    ; Get maximum n for which  R0 - (R1 * 2^n) >= 0
+    DivmodLoop1
+        ; Save for later
+        STR R1, R6, #0
+        STR R5, R6, #1
+
+        ; Increment address
+        ADD R6, R6, #2
+
+        ; Double
+        ADD R1, R1, R1
+        ADD R5, R5, R5
+
+        ; Check if R1 > R0
+        ADD R4, R3, R1
+        BRzp DivmodLoop1
+
+    ; Go back a step
+    ADD R6, R6, #-2
+
+    LDR R1, R6, #0
+    LDR R5, R6, #1
+
+    ; Keep removing with max n until R0 < R1
+    DivmodLoop2
+        ; Store and calculate
+        AND R4, R3, R3
+        AND R7, R2, R2
+
+        ADD R2, R2, R5
+        ADD R3, R3, R1
+
+        BRzp DivmodSkip
+            ; Undo if R3 < 0
+            AND R3, R4, R4
+            AND R2, R7, R7
+        DivmodSkip
+
+        ; Check if R0 < R1
+        ADD R4, R3, R0
+        BRn DivmodDone
+
+        ; Load earlier R1
+        ADD R6, R6, #-2
+
+        LDR R1, R6, #0
+        LDR R5, R6, #1
+
+        Brnzp DivmodLoop2
+
+    DivmodDone
+    LD R7, DivmodR7
+    LD R6, DivmodR6
+    LD R5, DivmodR5
+    LD R4, DivmodR4
+    LD R1, DivmodR1
+    LD R0, DivmodR0
+    RET
+
+; Storage for Mod
+DivmodStack .BLKW #28
+DivmodR0 .BLKW #1
+DivmodR1 .BLKW #1
+DivmodR4 .BLKW #1
+DivmodR5 .BLKW #1
+DivmodR6 .BLKW #1
+DivmodR7 .BLKW #1
+
+ONE .FILL #1
+
+.END
+
+.END

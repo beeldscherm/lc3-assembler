@@ -1,0 +1,708 @@
+.ORIG x3000
+
+LEA R0, MATRIX_IN
+JSR ReadMatrix
+
+LEA R1, MATRIX_MIN
+JSR MinorMatrix
+
+; First put cofactor matrix in adjoint matrix
+LEA R0, MATRIX_MIN
+LEA R1, MATRIX_ADJ
+LD  R2, EIGHT
+ADD R3, R2, #-7
+
+CofactorLoop
+    ; Load matrix_min[i]
+    ADD R4, R0, R2
+    LDR R4, R4, #0
+    
+    AND R5, R2, R3
+    BRz Even
+        NOT R4, R4
+        ADD R4, R4, #1
+    Even
+    
+    ADD R5, R1, R2 ; i
+    STR R4, R5, #0 ; MATRIX_ADJ[i] = R3
+    
+    ADD R2, R2, #-1
+    BRzp CofactorLoop
+
+; We can now calculate the determinant of our input using the matrix of cofactors
+LEA R3, MATRIX_IN
+LEA R4, MATRIX_ADJ
+
+LDR R1, R3, #0
+LDR R2, R4, #0
+JSR Mult
+AND R5, R0, R0
+
+LDR R1, R3, #1
+LDR R2, R4, #1
+JSR Mult
+ADD R5, R5, R0
+
+LDR R1, R3, #2
+LDR R2, R4, #2
+JSR Mult
+ADD R5, R5, R0
+
+; Get adjoint matrix by transposing
+LEA R0, MATRIX_ADJ
+JSR Transpose
+
+; Get inverse by dividing adjoint by the determinant (R5)
+LEA R4, MATRIX_ADJ
+AND R1, R5, R5
+LD  R5, EIGHT
+
+DivLoop
+    ; Load matrix_adj[i]
+    ADD R0, R4, R5
+    LDR R0, R0, #0
+    
+    ; R2 = R0 (matrix_adj[i) / R1 (determinant)
+    JSR DivMod
+    
+    ADD R0, R4, R5
+    STR R2, R0, #0
+    
+    ADD R5, R5, #-1
+    BRzp DivLoop
+
+LEA R2, MATRIX_ADJ
+JSR PrintMatrix
+HALT
+
+
+MATRIX_IN  .BLKW #9 ; Input matrix
+MATRIX_MIN .BLKW #9 ; Minor matrix
+MATRIX_ADJ .BLKW #9 ; Adjoint matrix
+
+FOUR  .FILL #4
+FIVE  .FILL #5
+SEVEN .FILL #7
+EIGHT .FILL #8
+NINE  .FILL #9
+
+
+; Reads a 3x3 matrix from the console
+; The matrix is stored in pointer R0
+ReadMatrix
+    ST R0, ReadMatrixR0
+    ST R1, ReadMatrixR1
+    ST R2, ReadMatrixR2
+    ST R7, ReadMatrixR7
+
+    ; Loop 9 times
+    LD R2, NINE
+
+    ReadMatrixLoop
+        JSR ReadNum
+        STR R1, R0, #0
+        ADD R0, R0, #1
+        ADD R2, R2, #-1
+        BRp ReadMatrixLoop
+    
+    LD R7, ReadMatrixR7
+    LD R2, ReadMatrixR2
+    LD R1, ReadMatrixR1
+    LD R0, ReadMatrixR0
+RET
+
+; Storage for ReadMatrix
+ReadMatrixR0 .BLKW #1
+ReadMatrixR1 .BLKW #1
+ReadMatrixR2 .BLKW #1
+ReadMatrixR7 .BLKW #1
+
+
+; Reads a positive integer from the console
+; The integer is written to R1
+ReadNum
+    ; Store needed registers
+    ST R0, ReadNumR0
+    ST R2, ReadNumR2
+    ST R3, ReadNumR3
+
+    LD R3, ToDigit
+    AND R1, R1, #0
+
+    ; Read until no characters left
+    ReadNumLoop
+        GETC
+        PUTC
+        
+        ; Check if valid digit and convert
+        ADD R0, R0, R3
+        BRn ReadNumDone
+        
+        ADD R2, R0, #-9
+        BRp ReadNumDone
+        
+        ; R0 now contains actual digit
+        ; We multiply R1 (intermediate result) by 10
+        ADD R1, R1, R1
+        ADD R2, R1, R1
+        ADD R2, R2, R2
+        ADD R1, R1, R2 ; 2xR1 + 8xR1
+
+        ; And add the new digit
+        ADD R1, R1, R0
+
+        BRnzp ReadNumLoop
+
+    ReadNumDone
+
+    ; pop registers
+    LD R3, ReadNumR3
+    LD R2, ReadNumR2
+    LD R0, ReadNumR0
+RET
+
+ToDigit .FILL #-48
+
+; Storage for ReadNum
+ReadNumR0 .BLKW #1
+ReadNumR2 .BLKW #1
+ReadNumR3 .BLKW #1
+
+
+; Calculates the matrix of minors for the 3x3 matrix pointed to by R0
+; Puts it in the address R1 is pointing to
+MinorMatrix
+    ST R0, MinMatR0
+    ST R1, MinMatR1
+    ST R2, MinMatR2
+    ST R3, MinMatR3
+    ST R4, MinMatR4
+    ST R5, MinMatR5
+    ST R6, MinMatR6
+    ST R7, MinMatR7
+    
+    ; First row
+    ADD R2, R0, #4 ; &matrix[4]
+    ADD R3, R0, #5 ; &matrix[5]
+    ADD R4, R0, #7 ; &matrix[7]
+    ADD R5, R0, #8 ; &matrix[8]
+
+    JSR MinMatIter
+
+    ; Second row
+    ADD R1, R1, #3
+    ADD R2, R2, #-2
+    ADD R3, R3, #-2
+    ADD R4, R4, #1
+    ADD R5, R5, #1
+    
+    JSR MinMatIter
+    
+    ; Third row
+    ADD R1, R1, #3
+    ADD R2, R2, #1
+    ADD R3, R3, #1
+    ADD R4, R4, #-2
+    ADD R5, R5, #-2
+
+    JSR MinMatIter
+    
+    LD R0, MinMatR0
+    LD R1, MinMatR1
+    LD R2, MinMatR2
+    LD R3, MinMatR3
+    LD R4, MinMatR4
+    LD R5, MinMatR5
+    LD R6, MinMatR6
+    LD R7, MinMatR7
+    RET
+
+; Subfunction
+MinMatIter
+    ST R7, MinMatIterR7
+
+    ; Calculate determinants for 1 row
+    JSR MinMatPush
+    JSR Det2x2
+    STR R6, R1, #0 ; Index 0
+
+    ADD R2, R2, #-1
+    ADD R4, R4, #-1
+
+    JSR MinMatPush
+    JSR Det2x2
+    STR R6, R1, #1 ; Index 1
+    
+    ADD R3, R3, #-1
+    ADD R5, R5, #-1
+
+    JSR MinMatPush
+    JSR Det2x2
+    STR R6, R1, #2 ; Index 2
+
+    LD R7, MinMatIterR7
+    RET
+
+MinMatIterR7 .BLKW #1
+    
+; Subfunction
+MinMatPush
+    ; Load matrix values R2-R5 into MinMatT
+    LDR R0, R5, #0
+    ST R0, MinMatT22
+    LDR R0, R4, #0
+    ST R0, MinMatT21
+    LDR R0, R3, #0
+    ST R0, MinMatT12
+    LDR R0, R2, #0
+    ST R0, MinMatT11
+    LEA R0, MinMatT11
+    RET
+
+; Storage for CofactorMatrix
+MinMatT11 .BLKW #1
+MinMatT12 .BLKW #1
+MinMatT21 .BLKW #1
+MinMatT22 .BLKW #1
+
+MinMatR0 .BLKW #1
+MinMatR1 .BLKW #1
+MinMatR2 .BLKW #1
+MinMatR3 .BLKW #1
+MinMatR4 .BLKW #1
+MinMatR5 .BLKW #1
+MinMatR6 .BLKW #1
+MinMatR7 .BLKW #1
+
+
+; Transposes the 3x3 matrix R0 is pointing to in place
+Transpose
+    ST R1, TransposeR1
+    ST R2, TransposeR2
+
+    ; Swap indices 1 and 3
+    LDR R1, R0, #1
+    LDR R2, R0, #3
+    STR R2, R0, #1
+    STR R1, R0, #3
+
+    ; Swap indices 2 and 6
+    LDR R1, R0, #2
+    LDR R2, R0, #6
+    STR R2, R0, #2
+    STR R1, R0, #6
+    
+    ; Swap indices 5 and 7
+    LDR R1, R0, #5
+    LDR R2, R0, #7
+    STR R2, R0, #5
+    STR R1, R0, #7
+
+    LD R1, TransposeR1
+    LD R2, TransposeR2
+    RET
+
+; Storage for transpose
+TransposeR1 .BLKW #1
+TransposeR2 .BLKW #1
+
+
+; Calculates the determinant of the 2x2 matrix pointed to by R0
+; Puts the number into R6
+Det2x2
+    ST R0, Det2x2R0
+    ST R1, Det2x2R1
+    ST R2, Det2x2R2
+    ST R3, Det2x2R3
+    ST R4, Det2x2R4
+    ST R7, Det2x2R7
+
+    AND R3, R0, R0 ; A x D
+    LDR R1, R3, #0
+    LDR R2, R3, #3
+    JSR Mult
+    AND R4, R0, R0
+
+    LDR, R1, R3, #1 ; B x C
+    LDR, R2, R3, #2
+    JSR Mult
+
+    NOT R0, R0 ; -(BC)
+    ADD R0, R0, #1
+
+    ADD R6, R4, R0 ; AD - BC
+
+    LD R0, Det2x2R0
+    LD R1, Det2x2R1
+    LD R2, Det2x2R2
+    LD R3, Det2x2R3
+    LD R4, Det2x2R4
+    LD R7, Det2x2R7
+    RET
+
+; Storage for Det2x2
+Det2x2R0 .BLKW #1
+Det2x2R1 .BLKW #1
+Det2x2R2 .BLKW #1
+Det2x2R3 .BLKW #1
+Det2x2R4 .BLKW #1
+Det2x2R7 .BLKW #1
+
+
+; Multiplies R1 by R2
+; Result is stored in R0
+Mult
+    ST R1, MultR1
+    ST R2, MultR2
+    ST R3, MultR3
+    ST R4, MultR4
+
+    AND R0, R0, #0
+
+    ; Check if R1 == 0 || R2 == 0
+    ADD R1, R1, #0
+    BRz MultDone
+    
+    ADD R2, R2, #0
+    BRz MultDone
+    
+    ; R3 is used to check if a certain bit is 1
+    ADD R3, R0, #1
+    
+    MultLoop
+        AND R4, R1, R3
+
+        BRz MultSkip
+            ; If current bit is 1
+            ADD R0, R0, R2
+            NOT R4, R3
+            AND R1, R1, R4
+            BRz MultDone
+    
+        MultSkip
+        ADD R2, R2, R2
+        ADD R3, R3, R3
+        BRnzp MultLoop
+
+    MultDone
+    LD R4, MultR4
+    LD R3, MultR3
+    LD R2, MultR2
+    LD R1, MultR1
+RET
+
+; Storage for Mult
+MultR1 .BLKW #1
+MultR2 .BLKW #1
+MultR3 .BLKW #1
+MultR4 .BLKW #1
+
+
+; Performs division and modulo operations on R0 and R1
+; R2 = R0 / R1
+; R3 = R0 % R1
+Divmod
+    ST R0, DivmodR0
+    ST R1, DivmodR1
+    ST R4, DivmodR4
+    ST R5, DivmodR5
+    ST R6, DivmodR6
+    ST R7, DivmodR7
+    
+    ; I don't like negative numbers
+    AND R3, R3, #0
+    
+    AND R0, R0, R0
+    BRzp DivmodR0Pos
+        NOT R0, R0
+        ADD R0, R0, #1
+        ADD R3, R3, #1
+    DivmodR0Pos
+    
+    AND R1, R1, R1
+    BRzp DivmodR1Pos
+        NOT R1, R1
+        ADD R1, R1, #1
+        ADD R3, R3, #-1
+    DivmodR1Pos
+
+    ST R3, DivmodNeg
+    
+    ; R1 == 1 ?
+    ADD R2, R1 #-1
+
+    BRp DivmodNot1
+        ; R1 == 1, so
+        ; R2 = (R0 / R1) == R0
+        ; R3 = (R0 % R1) == 0
+        AND R2, R0, R0
+        AND R3, R3, #0
+        BRnzp DivmodDone
+    DivmodNot1
+
+    ; R1 = -R1
+    NOT R1, R1
+    ADD R1, R1, #1
+
+    ; R1 >= R0 ?
+    ADD R3, R0, R1
+
+    BRp DivmodNotGE
+        BRn DivmodNE
+            ; R0 == R1, so
+            ; R2 = (R0 / R1) == 1
+            ; R3 = (R0 % R1) == 0
+            LD  R2, ONE
+            AND R3, R3, #0
+            BRnzp DivmodDone
+        DivmodNE
+        ; R0 > R1, so
+        ; R2 = (R0 / R1) == 0
+        ; R3 = (R0 % R1) == R0
+        AND R2, R2, #0
+        AND R3, R0, R0
+        BRnzp DivmodDone
+    DivmodNotGE
+
+    ; We now are sure R0 > R1
+    LEA R6, DivmodStack
+
+    ; For result
+    AND R2, R2, #0
+    AND R3, R0, R0
+
+    ; Save base R1 in R0
+    AND R0, R1, R1
+    ; For storing the powers of 2
+    LD R5, ONE
+
+    ; Get maximum n for which  R0 - (R1 * 2^n) >= 0
+    DivmodLoop1
+        ; Save for later
+        STR R1, R6, #0
+        STR R5, R6, #1
+
+        ; Increment address
+        ADD R6, R6, #2
+
+        ; Double
+        ADD R1, R1, R1
+        ADD R5, R5, R5
+
+        ; Check if R1 > R0
+        ADD R4, R3, R1
+        BRzp DivmodLoop1
+
+    ; Go back a step
+    ADD R6, R6, #-2
+
+    LDR R1, R6, #0
+    LDR R5, R6, #1
+
+    ; Keep removing with max n until R0 < R1
+    DivmodLoop2
+        ; Store and calculate
+        AND R4, R3, R3
+        AND R7, R2, R2
+
+        ADD R2, R2, R5
+        ADD R3, R3, R1
+
+        BRzp DivmodSkip
+            ; Undo if R3 < 0
+            AND R3, R4, R4
+            AND R2, R7, R7
+        DivmodSkip
+
+        ; Check if R0 < R1
+        ADD R4, R3, R0
+        BRn DivmodDone
+
+        ; Load earlier R1
+        ADD R6, R6, #-2
+
+        LDR R1, R6, #0
+        LDR R5, R6, #1
+
+        Brnzp DivmodLoop2
+
+    DivmodDone
+
+    LD R4, DivmodNeg
+    BRz DivmodPos
+        NOT R2, R2
+        ADD R2, R2, #1
+    DivmodPos
+    
+    LD R7, DivmodR7
+    LD R6, DivmodR6
+    LD R5, DivmodR5
+    LD R4, DivmodR4
+    LD R1, DivmodR1
+    LD R0, DivmodR0
+    RET
+
+; Storage for Mod
+DivmodStack .BLKW #28
+DivmodR0  .BLKW #1
+DivmodR1  .BLKW #1
+DivmodR4  .BLKW #1
+DivmodR5  .BLKW #1
+DivmodR6  .BLKW #1
+DivmodR7  .BLKW #1
+DivmodNeg .FILL #0
+
+ONE .FILL #1
+
+
+; Prints the 3x3 matrix to which R2 is pointing to console
+PrintMatrix
+    ST R0, PrintMatrixR0
+    ST R1, PrintMatrixR1
+    ST R2, PrintMatrixR2
+    ST R3, PrintMatrixR3
+    ST R7, PrintMatrixR7
+
+    LD R3, THREE
+    
+    PrintMatrixLoop
+        ; First number of row
+        LDR R1, R2, #0
+        JSR PrintNum
+        LD R0, ASCII_SPACE
+        PUTC
+        
+        ADD R2, R2, #1
+        ; Second number of row
+        LDR R1, R2, #0
+        JSR PrintNum
+        LD R0, ASCII_SPACE
+        PUTC
+        
+        ADD R2, R2, #1
+        ; Last number of row
+        LDR R1, R2, #0
+        JSR PrintNum
+        LD R0, ASCII_NEWLINE
+        PUTC
+        
+        ADD R2, R2, #1
+        ADD R3, R3, #-1
+        BRp PrintMatrixLoop
+
+    LD R7, PrintMatrixR7
+    LD R3, PrintMatrixR3
+    LD R2, PrintMatrixR2
+    LD R1, PrintMatrixR1
+    LD R0, PrintMatrixR0
+    RET
+
+; Storage for PrintMatrix
+PrintMatrixR0 .BLKW #1
+PrintMatrixR1 .BLKW #1
+PrintMatrixR2 .BLKW #1
+PrintMatrixR3 .BLKW #1
+PrintMatrixR7 .BLKW #1
+
+
+; Prints the number in R1 to the console
+PrintNum
+    ST R0, PrintNumR0
+    ST R1, PrintNumR1
+    ST R2, PrintNumR2
+    ST R3, PrintNumR3
+    ST R4, PrintNumR4
+
+    ; Check for negative numbers
+    AND R1, R1, R1
+    BRp PrintNumPos
+    BRz PrintNumDone
+        NOT R1, R1
+        ADD R1, R1, #1
+        LD R0, ASCII_MINUS
+        PUTC
+    
+    PrintNumPos
+    
+    ; R2 stores whether the first digit has been found
+    AND R2, R2, #0
+
+    ; R3 stores a pointer to the current factor
+    LEA R3, PrintNumF5
+    ; R4 stores the factor
+    LDR R4, R3, #0
+
+    PrintNumLoop
+        ; R0 stores the ascii code of the current digit
+        LD R0, ASCII_SLASH
+
+        PrintNumMod
+            ADD R0, R0, #1
+            ADD R1, R1, R4
+            BRzp PrintNumMod
+
+        ; Add the last iter back
+        NOT R4, R4
+        ADD R4, R4, #1
+        ADD R1, R1, R4
+        
+        ; Check if should print
+        AND R2, R2, R2
+        BRp PrintNumPUTC
+        
+        ; Check if zero
+        LD R4, ASCII_NZERO
+        ADD R4, R0, R4
+        BRz PrintNumNULL
+        
+        ; First digit!
+        ADD R2, R2, #1
+        
+        PrintNumPUTC PUTC
+
+        PrintNumNULL
+        
+        ADD R3, R3, #1
+        LDR R4, R3, #0
+        BRn PrintNumLoop
+    
+    PrintNumDone
+    ; Last digit always needs to be printed
+    LD R0, ASCII_SLASH
+    ADD R0, R0, #1
+    ADD R0, R0, R1
+    
+    PUTC
+
+    LD R4, PrintNumR4
+    LD R3, PrintNumR3
+    LD R2, PrintNumR2
+    LD R1, PrintNumR1
+    LD R0, PrintNumR0
+    RET
+
+; For printing
+ASCII_MINUS   .FILL x2D
+ASCII_SLASH   .FILL x2F
+ASCII_NZERO   .FILL x-30
+ASCII_NEWLINE .FILL x0A
+ASCII_SPACE   .FILL x20
+
+THREE .FILL #3
+
+; All factors of 10 we need
+PrintNumF5 .FILL #-10000
+PrintNumF4 .FILL #-1000
+PrintNumF3 .FILL #-100
+PrintNumF2 .FILL #-10
+PrintNumF0 .FILL #0
+
+; Storage for PrintNum
+PrintNumR0 .BLKW #1
+PrintNumR1 .BLKW #1
+PrintNumR2 .BLKW #1
+PrintNumR3 .BLKW #1
+PrintNumR4 .BLKW #1
+
+
+.END

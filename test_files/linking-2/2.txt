@@ -1,0 +1,26 @@
+.ORIG x31CB
+
+; For printing
+ASCII_MINUS   .FILL x2D
+ASCII_SLASH   .FILL x2F
+ASCII_NZERO   .FILL x-30
+ASCII_NEWLINE .FILL x0A
+ASCII_SPACE   .FILL x20
+
+THREE .FILL #3
+
+; All factors of 10 we need
+PrintNumF5 .FILL #-10000
+PrintNumF4 .FILL #-1000
+PrintNumF3 .FILL #-100
+PrintNumF2 .FILL #-10
+PrintNumF0 .FILL #0
+
+; Storage for PrintNum
+PrintNumR0 .BLKW #1
+PrintNumR1 .BLKW #1
+PrintNumR2 .BLKW #1
+PrintNumR3 .BLKW #1
+PrintNumR4 .BLKW #1
+
+.END

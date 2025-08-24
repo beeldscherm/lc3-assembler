@@ -1,0 +1,1298 @@
+--------------------------------------------------------
+File buffer: (thread 90900160)
+--------------------------------------------------------
+  0|.ORIG x3000
+  1|
+  2|LEA R0, MATRIX_IN
+  3|JSR ReadMatrix
+  4|
+  5|LEA R1, MATRIX_MIN
+  6|JSR MinorMatrix
+  7|
+  8|
+  9|LEA R0, MATRIX_MIN
+ 10|LEA R1, MATRIX_ADJ
+ 11|LD  R2, EIGHT
+ 12|ADD R3, R2, #-7
+ 13|
+ 14|CofactorLoop
+ 15|    
+ 16|    ADD R4, R0, R2
+ 17|    LDR R4, R4, #0
+ 18|    
+ 19|    AND R5, R2, R3
+ 20|    BRz Even
+ 21|        NOT R4, R4
+ 22|        ADD R4, R4, #1
+ 23|    Even
+ 24|    
+ 25|    ADD R5, R1, R2 
+ 26|    STR R4, R5, #0 
+ 27|    
+ 28|    ADD R2, R2, #-1
+ 29|    BRzp CofactorLoop
+ 30|
+ 31|
+ 32|LEA R3, MATRIX_IN
+ 33|LEA R4, MATRIX_ADJ
+ 34|
+ 35|LDR R1, R3, #0
+ 36|LDR R2, R4, #0
+ 37|JSR Mult
+ 38|AND R5, R0, R0
+ 39|
+ 40|LDR R1, R3, #1
+ 41|LDR R2, R4, #1
+ 42|JSR Mult
+ 43|ADD R5, R5, R0
+ 44|
+ 45|LDR R1, R3, #2
+ 46|LDR R2, R4, #2
+ 47|JSR Mult
+ 48|ADD R5, R5, R0
+ 49|
+ 50|
+ 51|LEA R0, MATRIX_ADJ
+ 52|JSR Transpose
+ 53|
+ 54|
+ 55|LEA R4, MATRIX_ADJ
+ 56|AND R1, R5, R5
+ 57|LD  R5, EIGHT
+ 58|
+ 59|DivLoop
+ 60|    
+ 61|    ADD R0, R4, R5
+ 62|    LDR R0, R0, #0
+ 63|    
+ 64|    
+ 65|    JSR DivMod
+ 66|    
+ 67|    ADD R0, R4, R5
+ 68|    STR R2, R0, #0
+ 69|    
+ 70|    ADD R5, R5, #-1
+ 71|    BRzp DivLoop
+ 72|
+ 73|LEA R2, MATRIX_ADJ
+ 74|JSR PrintMatrix
+ 75|HALT
+ 76|
+ 77|
+ 78|MATRIX_IN  .BLKW #9 
+ 79|MATRIX_MIN .BLKW #9 
+ 80|MATRIX_ADJ .BLKW #9 
+ 81|
+ 82|FOUR  .FILL #4
+ 83|FIVE  .FILL #5
+ 84|SEVEN .FILL #7
+ 85|EIGHT .FILL #8
+ 86|NINE  .FILL #9
+ 87|
+ 88|
+ 89|
+ 90|
+ 91|ReadMatrix
+ 92|    ST R0, ReadMatrixR0
+ 93|    ST R1, ReadMatrixR1
+ 94|    ST R2, ReadMatrixR2
+ 95|    ST R7, ReadMatrixR7
+ 96|
+ 97|    
+ 98|    LD R2, NINE
+ 99|
+100|    ReadMatrixLoop
+101|        JSR ReadNum
+102|        STR R1, R0, #0
+103|        ADD R0, R0, #1
+104|        ADD R2, R2, #-1
+105|        BRp ReadMatrixLoop
+106|    
+107|    LD R7, ReadMatrixR7
+108|    LD R2, ReadMatrixR2
+109|    LD R1, ReadMatrixR1
+110|    LD R0, ReadMatrixR0
+111|RET
+112|
+113|
+114|ReadMatrixR0 .BLKW #1
+115|ReadMatrixR1 .BLKW #1
+116|ReadMatrixR2 .BLKW #1
+117|ReadMatrixR7 .BLKW #1
+118|
+119|
+120|
+121|
+122|ReadNum
+123|    
+124|    ST R0, ReadNumR0
+125|    ST R2, ReadNumR2
+126|    ST R3, ReadNumR3
+127|
+128|    LD R3, ToDigit
+129|    AND R1, R1, #0
+130|
+131|    
+132|    ReadNumLoop
+133|        GETC
+134|        PUTC
+135|        
+136|        
+137|        ADD R0, R0, R3
+138|        BRn ReadNumDone
+139|        
+140|        ADD R2, R0, #-9
+141|        BRp ReadNumDone
+142|        
+143|        
+144|        
+145|        ADD R1, R1, R1
+146|        ADD R2, R1, R1
+147|        ADD R2, R2, R2
+148|        ADD R1, R1, R2 
+149|
+150|        
+151|        ADD R1, R1, R0
+152|
+153|        BRnzp ReadNumLoop
+154|
+155|    ReadNumDone
+156|
+157|    
+158|    LD R3, ReadNumR3
+159|    LD R2, ReadNumR2
+160|    LD R0, ReadNumR0
+161|RET
+162|
+163|ToDigit .FILL #-48
+164|
+165|
+166|ReadNumR0 .BLKW #1
+167|ReadNumR2 .BLKW #1
+168|ReadNumR3 .BLKW #1
+169|
+170|
+171|
+172|
+173|MinorMatrix
+174|    ST R0, MinMatR0
+175|    ST R1, MinMatR1
+176|    ST R2, MinMatR2
+177|    ST R3, MinMatR3
+178|    ST R4, MinMatR4
+179|    ST R5, MinMatR5
+180|    ST R6, MinMatR6
+181|    ST R7, MinMatR7
+182|    
+183|    
+184|    ADD R2, R0, #4 
+185|    ADD R3, R0, #5 
+186|    ADD R4, R0, #7 
+187|    ADD R5, R0, #8 
+188|
+189|    JSR MinMatIter
+190|
+191|    
+192|    ADD R1, R1, #3
+193|    ADD R2, R2, #-2
+194|    ADD R3, R3, #-2
+195|    ADD R4, R4, #1
+196|    ADD R5, R5, #1
+197|    
+198|    JSR MinMatIter
+199|    
+200|    
+201|    ADD R1, R1, #3
+202|    ADD R2, R2, #1
+203|    ADD R3, R3, #1
+204|    ADD R4, R4, #-2
+205|    ADD R5, R5, #-2
+206|
+207|    JSR MinMatIter
+208|    
+209|    LD R0, MinMatR0
+210|    LD R1, MinMatR1
+211|    LD R2, MinMatR2
+212|    LD R3, MinMatR3
+213|    LD R4, MinMatR4
+214|    LD R5, MinMatR5
+215|    LD R6, MinMatR6
+216|    LD R7, MinMatR7
+217|    RET
+218|
+219|
+220|MinMatIter
+221|    ST R7, MinMatIterR7
+222|
+223|    
+224|    JSR MinMatPush
+225|    JSR Det2x2
+226|    STR R6, R1, #0 
+227|
+228|    ADD R2, R2, #-1
+229|    ADD R4, R4, #-1
+230|
+231|    JSR MinMatPush
+232|    JSR Det2x2
+233|    STR R6, R1, #1 
+234|    
+235|    ADD R3, R3, #-1
+236|    ADD R5, R5, #-1
+237|
+238|    JSR MinMatPush
+239|    JSR Det2x2
+240|    STR R6, R1, #2 
+241|
+242|    LD R7, MinMatIterR7
+243|    RET
+244|
+245|MinMatIterR7 .BLKW #1
+246|    
+247|
+248|MinMatPush
+249|    
+250|    LDR R0, R5, #0
+251|    ST R0, MinMatT22
+252|    LDR R0, R4, #0
+253|    ST R0, MinMatT21
+254|    LDR R0, R3, #0
+255|    ST R0, MinMatT12
+256|    LDR R0, R2, #0
+257|    ST R0, MinMatT11
+258|    LEA R0, MinMatT11
+259|    RET
+260|
+261|
+262|MinMatT11 .BLKW #1
+263|MinMatT12 .BLKW #1
+264|MinMatT21 .BLKW #1
+265|MinMatT22 .BLKW #1
+266|
+267|MinMatR0 .BLKW #1
+268|MinMatR1 .BLKW #1
+269|MinMatR2 .BLKW #1
+270|MinMatR3 .BLKW #1
+271|MinMatR4 .BLKW #1
+272|MinMatR5 .BLKW #1
+273|MinMatR6 .BLKW #1
+274|MinMatR7 .BLKW #1
+275|
+276|
+277|
+278|Transpose
+279|    ST R1, TransposeR1
+280|    ST R2, TransposeR2
+281|
+282|    
+283|    LDR R1, R0, #1
+284|    LDR R2, R0, #3
+285|    STR R2, R0, #1
+286|    STR R1, R0, #3
+287|
+288|    
+289|    LDR R1, R0, #2
+290|    LDR R2, R0, #6
+291|    STR R2, R0, #2
+292|    STR R1, R0, #6
+293|    
+294|    
+295|    LDR R1, R0, #5
+296|    LDR R2, R0, #7
+297|    STR R2, R0, #5
+298|    STR R1, R0, #7
+299|
+300|    LD R1, TransposeR1
+301|    LD R2, TransposeR2
+302|    RET
+303|
+304|
+305|TransposeR1 .BLKW #1
+306|TransposeR2 .BLKW #1
+307|
+308|
+309|
+310|
+311|Det2x2
+312|    ST R0, Det2x2R0
+313|    ST R1, Det2x2R1
+314|    ST R2, Det2x2R2
+315|    ST R3, Det2x2R3
+316|    ST R4, Det2x2R4
+317|    ST R7, Det2x2R7
+318|
+319|    AND R3, R0, R0 
+320|    LDR R1, R3, #0
+321|    LDR R2, R3, #3
+322|    JSR Mult
+323|    AND R4, R0, R0
+324|
+325|    LDR, R1, R3, #1 
+326|    LDR, R2, R3, #2
+327|    JSR Mult
+328|
+329|    NOT R0, R0 
+330|    ADD R0, R0, #1
+331|
+332|    ADD R6, R4, R0 
+333|
+334|    LD R0, Det2x2R0
+335|    LD R1, Det2x2R1
+336|    LD R2, Det2x2R2
+337|    LD R3, Det2x2R3
+338|    LD R4, Det2x2R4
+339|    LD R7, Det2x2R7
+340|    RET
+341|
+342|
+343|Det2x2R0 .BLKW #1
+344|Det2x2R1 .BLKW #1
+345|Det2x2R2 .BLKW #1
+346|Det2x2R3 .BLKW #1
+347|Det2x2R4 .BLKW #1
+348|Det2x2R7 .BLKW #1
+349|
+350|
+351|
+352|
+353|Mult
+354|    ST R1, MultR1
+355|    ST R2, MultR2
+356|    ST R3, MultR3
+357|    ST R4, MultR4
+358|
+359|    AND R0, R0, #0
+360|
+361|    
+362|    ADD R1, R1, #0
+363|    BRz MultDone
+364|    
+365|    ADD R2, R2, #0
+366|    BRz MultDone
+367|    
+368|    
+369|    ADD R3, R0, #1
+370|    
+371|    MultLoop
+372|        AND R4, R1, R3
+373|
+374|        BRz MultSkip
+375|            
+376|            ADD R0, R0, R2
+377|            NOT R4, R3
+378|            AND R1, R1, R4
+379|            BRz MultDone
+380|    
+381|        MultSkip
+382|        ADD R2, R2, R2
+383|        ADD R3, R3, R3
+384|        BRnzp MultLoop
+385|
+386|    MultDone
+387|    LD R4, MultR4
+388|    LD R3, MultR3
+389|    LD R2, MultR2
+390|    LD R1, MultR1
+391|RET
+392|
+393|
+394|MultR1 .BLKW #1
+395|MultR2 .BLKW #1
+396|MultR3 .BLKW #1
+397|MultR4 .BLKW #1
+398|
+399|
+400|
+401|
+402|
+403|Divmod
+404|    ST R0, DivmodR0
+405|    ST R1, DivmodR1
+406|    ST R4, DivmodR4
+407|    ST R5, DivmodR5
+408|    ST R6, DivmodR6
+409|    ST R7, DivmodR7
+410|    
+411|    
+412|    AND R3, R3, #0
+413|    
+414|    AND R0, R0, R0
+415|    BRzp DivmodR0Pos
+416|        NOT R0, R0
+417|        ADD R0, R0, #1
+418|        ADD R3, R3, #1
+419|    DivmodR0Pos
+420|    
+421|    AND R1, R1, R1
+422|    BRzp DivmodR1Pos
+423|        NOT R1, R1
+424|        ADD R1, R1, #1
+425|        ADD R3, R3, #-1
+426|    DivmodR1Pos
+427|
+428|    ST R3, DivmodNeg
+429|    
+430|    
+431|    ADD R2, R1 #-1
+432|
+433|    BRp DivmodNot1
+434|        
+435|        
+436|        
+437|        AND R2, R0, R0
+438|        AND R3, R3, #0
+439|        BRnzp DivmodDone
+440|    DivmodNot1
+441|
+442|    
+443|    NOT R1, R1
+444|    ADD R1, R1, #1
+445|
+446|    
+447|    ADD R3, R0, R1
+448|
+449|    BRp DivmodNotGE
+450|        BRn DivmodNE
+451|            
+452|            
+453|            
+454|            LD  R2, ONE
+455|            AND R3, R3, #0
+456|            BRnzp DivmodDone
+457|        DivmodNE
+458|        
+459|        
+460|        
+461|        AND R2, R2, #0
+462|        AND R3, R0, R0
+463|        BRnzp DivmodDone
+464|    DivmodNotGE
+465|
+466|    
+467|    LEA R6, DivmodStack
+468|
+469|    
+470|    AND R2, R2, #0
+471|    AND R3, R0, R0
+472|
+473|    
+474|    AND R0, R1, R1
+475|    
+476|    LD R5, ONE
+477|
+478|    
+479|    DivmodLoop1
+480|        
+481|        STR R1, R6, #0
+482|        STR R5, R6, #1
+483|
+484|        
+485|        ADD R6, R6, #2
+486|
+487|        
+488|        ADD R1, R1, R1
+489|        ADD R5, R5, R5
+490|
+491|        
+492|        ADD R4, R3, R1
+493|        BRzp DivmodLoop1
+494|
+495|    
+496|    ADD R6, R6, #-2
+497|
+498|    LDR R1, R6, #0
+499|    LDR R5, R6, #1
+500|
+501|    
+502|    DivmodLoop2
+503|        
+504|        AND R4, R3, R3
+505|        AND R7, R2, R2
+506|
+507|        ADD R2, R2, R5
+508|        ADD R3, R3, R1
+509|
+510|        BRzp DivmodSkip
+511|            
+512|            AND R3, R4, R4
+513|            AND R2, R7, R7
+514|        DivmodSkip
+515|
+516|        
+517|        ADD R4, R3, R0
+518|        BRn DivmodDone
+519|
+520|        
+521|        ADD R6, R6, #-2
+522|
+523|        LDR R1, R6, #0
+524|        LDR R5, R6, #1
+525|
+526|        Brnzp DivmodLoop2
+527|
+528|    DivmodDone
+529|
+530|    LD R4, DivmodNeg
+531|    BRz DivmodPos
+532|        NOT R2, R2
+533|        ADD R2, R2, #1
+534|    DivmodPos
+535|    
+536|    LD R7, DivmodR7
+537|    LD R6, DivmodR6
+538|    LD R5, DivmodR5
+539|    LD R4, DivmodR4
+540|    LD R1, DivmodR1
+541|    LD R0, DivmodR0
+542|    RET
+543|
+544|
+545|DivmodStack .BLKW #28
+546|DivmodR0  .BLKW #1
+547|DivmodR1  .BLKW #1
+548|DivmodR4  .BLKW #1
+549|DivmodR5  .BLKW #1
+550|DivmodR6  .BLKW #1
+551|DivmodR7  .BLKW #1
+552|DivmodNeg .FILL #0
+553|
+554|ONE .FILL #1
+555|
+556|
+557|
+558|PrintMatrix
+559|    ST R0, PrintMatrixR0
+560|    ST R1, PrintMatrixR1
+561|    ST R2, PrintMatrixR2
+562|    ST R3, PrintMatrixR3
+563|    ST R7, PrintMatrixR7
+564|
+565|    LD R3, THREE
+566|    
+567|    PrintMatrixLoop
+568|        
+569|        LDR R1, R2, #0
+570|        JSR PrintNum
+571|        LD R0, ASCII_SPACE
+572|        PUTC
+573|        
+574|        ADD R2, R2, #1
+575|        
+576|        LDR R1, R2, #0
+577|        JSR PrintNum
+578|        LD R0, ASCII_SPACE
+579|        PUTC
+580|        
+581|        ADD R2, R2, #1
+582|        
+583|        LDR R1, R2, #0
+584|        JSR PrintNum
+585|        LD R0, ASCII_NEWLINE
+586|        PUTC
+587|        
+588|        ADD R2, R2, #1
+589|        ADD R3, R3, #-1
+590|        BRp PrintMatrixLoop
+591|
+592|    LD R7, PrintMatrixR7
+593|    LD R3, PrintMatrixR3
+594|    LD R2, PrintMatrixR2
+595|    LD R1, PrintMatrixR1
+596|    LD R0, PrintMatrixR0
+597|    RET
+598|
+599|
+600|PrintMatrixR0 .BLKW #1
+601|PrintMatrixR1 .BLKW #1
+602|PrintMatrixR2 .BLKW #1
+603|PrintMatrixR3 .BLKW #1
+604|PrintMatrixR7 .BLKW #1
+605|
+606|
+607|
+608|PrintNum
+609|    ST R0, PrintNumR0
+610|    ST R1, PrintNumR1
+611|    ST R2, PrintNumR2
+612|    ST R3, PrintNumR3
+613|    ST R4, PrintNumR4
+614|
+615|    
+616|    AND R1, R1, R1
+617|    BRp PrintNumPos
+618|    BRz PrintNumDone
+619|        NOT R1, R1
+620|        ADD R1, R1, #1
+621|        LD R0, ASCII_MINUS
+622|        PUTC
+623|    
+624|    PrintNumPos
+625|    
+626|    
+627|    AND R2, R2, #0
+628|
+629|    
+630|    LEA R3, PrintNumF5
+631|    
+632|    LDR R4, R3, #0
+633|
+634|    PrintNumLoop
+635|        
+636|        LD R0, ASCII_SLASH
+637|
+638|        PrintNumMod
+639|            ADD R0, R0, #1
+640|            ADD R1, R1, R4
+641|            BRzp PrintNumMod
+642|
+643|        
+644|        NOT R4, R4
+645|        ADD R4, R4, #1
+646|        ADD R1, R1, R4
+647|        
+648|        
+649|        AND R2, R2, R2
+650|        BRp PrintNumPUTC
+651|        
+652|        
+653|        LD R4, ASCII_NZERO
+654|        ADD R4, R0, R4
+655|        BRz PrintNumNULL
+656|        
+657|        
+658|        ADD R2, R2, #1
+659|        
+660|        PrintNumPUTC PUTC
+661|
+662|        PrintNumNULL
+663|        
+664|        ADD R3, R3, #1
+665|        LDR R4, R3, #0
+666|        BRn PrintNumLoop
+667|    
+668|    PrintNumDone
+669|    
+670|    LD R0, ASCII_SLASH
+671|    ADD R0, R0, #1
+672|    ADD R0, R0, R1
+673|    
+674|    PUTC
+675|
+676|    LD R4, PrintNumR4
+677|    LD R3, PrintNumR3
+678|    LD R2, PrintNumR2
+679|    LD R1, PrintNumR1
+680|    LD R0, PrintNumR0
+681|    RET
+682|
+683|
+684|ASCII_MINUS   .FILL x2D
+685|ASCII_SLASH   .FILL x2F
+686|ASCII_NZERO   .FILL x-30
+687|ASCII_NEWLINE .FILL x0A
+688|ASCII_SPACE   .FILL x20
+689|
+690|THREE .FILL #3
+691|
+692|
+693|PrintNumF5 .FILL #-10000
+694|PrintNumF4 .FILL #-1000
+695|PrintNumF3 .FILL #-100
+696|PrintNumF2 .FILL #-10
+697|PrintNumF0 .FILL #0
+698|
+699|
+700|PrintNumR0 .BLKW #1
+701|PrintNumR1 .BLKW #1
+702|PrintNumR2 .BLKW #1
+703|PrintNumR3 .BLKW #1
+704|PrintNumR4 .BLKW #1
+705|
+706|
+707|.END
+--------------------------------------------------------
+  0 | 0xE000 MATRIX_IN
+  1 | 0x4800 ReadMatrix
+  2 | 0xE200 MATRIX_MIN
+  3 | 0x4800 MinorMatrix
+  4 | 0xE000 MATRIX_MIN
+  5 | 0xE200 MATRIX_ADJ
+  6 | 0x2400 EIGHT
+  7 | 0x16B9 
+  8 | 0x1802 
+  9 | 0x6900 
+ 10 | 0x5A83 
+ 11 | 0x0400 Even
+ 12 | 0x993F 
+ 13 | 0x1921 
+ 14 | 0x1A42 
+ 15 | 0x7940 
+ 16 | 0x14BF 
+ 17 | 0x0600 CofactorLoop
+ 18 | 0xE600 MATRIX_IN
+ 19 | 0xE800 MATRIX_ADJ
+ 20 | 0x62C0 
+ 21 | 0x6500 
+ 22 | 0x4800 Mult
+ 23 | 0x5A00 
+ 24 | 0x62C1 
+ 25 | 0x6501 
+ 26 | 0x4800 Mult
+ 27 | 0x1B40 
+ 28 | 0x62C2 
+ 29 | 0x6502 
+ 30 | 0x4800 Mult
+ 31 | 0x1B40 
+ 32 | 0xE000 MATRIX_ADJ
+ 33 | 0x4800 Transpose
+ 34 | 0xE800 MATRIX_ADJ
+ 35 | 0x5345 
+ 36 | 0x2A00 EIGHT
+ 37 | 0x1105 
+ 38 | 0x6000 
+ 39 | 0x4800 DivMod
+ 40 | 0x1105 
+ 41 | 0x7400 
+ 42 | 0x1B7F 
+ 43 | 0x0600 DivLoop
+ 44 | 0xE400 MATRIX_ADJ
+ 45 | 0x4800 PrintMatrix
+ 46 | 0xF025 
+ 47 | 0x0000 
+ 48 | 0x0000 
+ 49 | 0x0000 
+ 50 | 0x0000 
+ 51 | 0x0000 
+ 52 | 0x0000 
+ 53 | 0x0000 
+ 54 | 0x0000 
+ 55 | 0x0000 
+ 56 | 0x0000 
+ 57 | 0x0000 
+ 58 | 0x0000 
+ 59 | 0x0000 
+ 60 | 0x0000 
+ 61 | 0x0000 
+ 62 | 0x0000 
+ 63 | 0x0000 
+ 64 | 0x0000 
+ 65 | 0x0000 
+ 66 | 0x0000 
+ 67 | 0x0000 
+ 68 | 0x0000 
+ 69 | 0x0000 
+ 70 | 0x0000 
+ 71 | 0x0000 
+ 72 | 0x0000 
+ 73 | 0x0000 
+ 74 | 0x0004 
+ 75 | 0x0005 
+ 76 | 0x0007 
+ 77 | 0x0008 
+ 78 | 0x0009 
+ 79 | 0x3000 ReadMatrixR0
+ 80 | 0x3200 ReadMatrixR1
+ 81 | 0x3400 ReadMatrixR2
+ 82 | 0x3E00 ReadMatrixR7
+ 83 | 0x2400 NINE
+ 84 | 0x4800 ReadNum
+ 85 | 0x7200 
+ 86 | 0x1021 
+ 87 | 0x14BF 
+ 88 | 0x0200 ReadMatrixLoop
+ 89 | 0x2E00 ReadMatrixR7
+ 90 | 0x2400 ReadMatrixR2
+ 91 | 0x2200 ReadMatrixR1
+ 92 | 0x2000 ReadMatrixR0
+ 93 | 0xC1C0 
+ 94 | 0x0000 
+ 95 | 0x0000 
+ 96 | 0x0000 
+ 97 | 0x0000 
+ 98 | 0x3000 ReadNumR0
+ 99 | 0x3400 ReadNumR2
+100 | 0x3600 ReadNumR3
+101 | 0x2600 ToDigit
+102 | 0x5260 
+103 | 0xF020 
+104 | 0xF021 
+105 | 0x1003 
+106 | 0x0800 ReadNumDone
+107 | 0x1437 
+108 | 0x0200 ReadNumDone
+109 | 0x1241 
+110 | 0x1441 
+111 | 0x1482 
+112 | 0x1242 
+113 | 0x1240 
+114 | 0x0E00 ReadNumLoop
+115 | 0x2600 ReadNumR3
+116 | 0x2400 ReadNumR2
+117 | 0x2000 ReadNumR0
+118 | 0xC1C0 
+119 | 0xFFD0 
+120 | 0x0000 
+121 | 0x0000 
+122 | 0x0000 
+123 | 0x3000 MinMatR0
+124 | 0x3200 MinMatR1
+125 | 0x3400 MinMatR2
+126 | 0x3600 MinMatR3
+127 | 0x3800 MinMatR4
+128 | 0x3A00 MinMatR5
+129 | 0x3C00 MinMatR6
+130 | 0x3E00 MinMatR7
+131 | 0x1424 
+132 | 0x1625 
+133 | 0x1827 
+134 | 0x1A28 
+135 | 0x4800 MinMatIter
+136 | 0x1263 
+137 | 0x14BE 
+138 | 0x16FE 
+139 | 0x1921 
+140 | 0x1B61 
+141 | 0x4800 MinMatIter
+142 | 0x1263 
+143 | 0x14A1 
+144 | 0x16E1 
+145 | 0x193E 
+146 | 0x1B7E 
+147 | 0x4800 MinMatIter
+148 | 0x2000 MinMatR0
+149 | 0x2200 MinMatR1
+150 | 0x2400 MinMatR2
+151 | 0x2600 MinMatR3
+152 | 0x2800 MinMatR4
+153 | 0x2A00 MinMatR5
+154 | 0x2C00 MinMatR6
+155 | 0x2E00 MinMatR7
+156 | 0xC1C0 
+157 | 0x3E00 MinMatIterR7
+158 | 0x4800 MinMatPush
+159 | 0x4800 Det2x2
+160 | 0x7C40 
+161 | 0x14BF 
+162 | 0x193F 
+163 | 0x4800 MinMatPush
+164 | 0x4800 Det2x2
+165 | 0x7C41 
+166 | 0x16FF 
+167 | 0x1B7F 
+168 | 0x4800 MinMatPush
+169 | 0x4800 Det2x2
+170 | 0x7C42 
+171 | 0x2E00 MinMatIterR7
+172 | 0xC1C0 
+173 | 0x0000 
+174 | 0x6140 
+175 | 0x3000 MinMatT22
+176 | 0x6100 
+177 | 0x3000 MinMatT21
+178 | 0x60C0 
+179 | 0x3000 MinMatT12
+180 | 0x6080 
+181 | 0x3000 MinMatT11
+182 | 0xE000 MinMatT11
+183 | 0xC1C0 
+184 | 0x0000 
+185 | 0x0000 
+186 | 0x0000 
+187 | 0x0000 
+188 | 0x0000 
+189 | 0x0000 
+190 | 0x0000 
+191 | 0x0000 
+192 | 0x0000 
+193 | 0x0000 
+194 | 0x0000 
+195 | 0x0000 
+196 | 0x3200 TransposeR1
+197 | 0x3400 TransposeR2
+198 | 0x6201 
+199 | 0x6403 
+200 | 0x7401 
+201 | 0x7203 
+202 | 0x6202 
+203 | 0x6406 
+204 | 0x7402 
+205 | 0x7206 
+206 | 0x6205 
+207 | 0x6407 
+208 | 0x7405 
+209 | 0x7207 
+210 | 0x2200 TransposeR1
+211 | 0x2400 TransposeR2
+212 | 0xC1C0 
+213 | 0x0000 
+214 | 0x0000 
+215 | 0x3000 Det2x2R0
+216 | 0x3200 Det2x2R1
+217 | 0x3400 Det2x2R2
+218 | 0x3600 Det2x2R3
+219 | 0x3800 Det2x2R4
+220 | 0x3E00 Det2x2R7
+221 | 0x5600 
+222 | 0x62C0 
+223 | 0x64C3 
+224 | 0x4800 Mult
+225 | 0x5800 
+226 | 0x62C1 
+227 | 0x64C2 
+228 | 0x4800 Mult
+229 | 0x903F 
+230 | 0x1021 
+231 | 0x1D00 
+232 | 0x2000 Det2x2R0
+233 | 0x2200 Det2x2R1
+234 | 0x2400 Det2x2R2
+235 | 0x2600 Det2x2R3
+236 | 0x2800 Det2x2R4
+237 | 0x2E00 Det2x2R7
+238 | 0xC1C0 
+239 | 0x0000 
+240 | 0x0000 
+241 | 0x0000 
+242 | 0x0000 
+243 | 0x0000 
+244 | 0x0000 
+245 | 0x3200 MultR1
+246 | 0x3400 MultR2
+247 | 0x3600 MultR3
+248 | 0x3800 MultR4
+249 | 0x5020 
+250 | 0x1260 
+251 | 0x0400 MultDone
+252 | 0x14A0 
+253 | 0x0400 MultDone
+254 | 0x1621 
+255 | 0x5843 
+256 | 0x0400 MultSkip
+257 | 0x1002 
+258 | 0x98FF 
+259 | 0x5244 
+260 | 0x0400 MultDone
+261 | 0x1482 
+262 | 0x16C3 
+263 | 0x0E00 MultLoop
+264 | 0x2800 MultR4
+265 | 0x2600 MultR3
+266 | 0x2400 MultR2
+267 | 0x2200 MultR1
+268 | 0xC1C0 
+269 | 0x0000 
+270 | 0x0000 
+271 | 0x0000 
+272 | 0x0000 
+273 | 0x3000 DivmodR0
+274 | 0x3200 DivmodR1
+275 | 0x3800 DivmodR4
+276 | 0x3A00 DivmodR5
+277 | 0x3C00 DivmodR6
+278 | 0x3E00 DivmodR7
+279 | 0x56E0 
+280 | 0x5000 
+281 | 0x0600 DivmodR0Pos
+282 | 0x903F 
+283 | 0x1021 
+284 | 0x16E1 
+285 | 0x5241 
+286 | 0x0600 DivmodR1Pos
+287 | 0x927F 
+288 | 0x1261 
+289 | 0x16FF 
+290 | 0x3600 DivmodNeg
+291 | 0x147F 
+292 | 0x0200 DivmodNot1
+293 | 0x5400 
+294 | 0x56E0 
+295 | 0x0E00 DivmodDone
+296 | 0x927F 
+297 | 0x1261 
+298 | 0x1601 
+299 | 0x0200 DivmodNotGE
+300 | 0x0800 DivmodNE
+301 | 0x2400 ONE
+302 | 0x56E0 
+303 | 0x0E00 DivmodDone
+304 | 0x54A0 
+305 | 0x5600 
+306 | 0x0E00 DivmodDone
+307 | 0xEC00 DivmodStack
+308 | 0x54A0 
+309 | 0x5600 
+310 | 0x5041 
+311 | 0x2A00 ONE
+312 | 0x7380 
+313 | 0x7B81 
+314 | 0x1DA2 
+315 | 0x1241 
+316 | 0x1B45 
+317 | 0x18C1 
+318 | 0x0600 DivmodLoop1
+319 | 0x1DBE 
+320 | 0x6380 
+321 | 0x6B81 
+322 | 0x58C3 
+323 | 0x5E82 
+324 | 0x1485 
+325 | 0x16C1 
+326 | 0x0600 DivmodSkip
+327 | 0x5704 
+328 | 0x55C7 
+329 | 0x18C0 
+330 | 0x0800 DivmodDone
+331 | 0x1DBE 
+332 | 0x6380 
+333 | 0x6B81 
+334 | 0x0E00 DivmodLoop2
+335 | 0x2800 DivmodNeg
+336 | 0x0400 DivmodPos
+337 | 0x94BF 
+338 | 0x14A1 
+339 | 0x2E00 DivmodR7
+340 | 0x2C00 DivmodR6
+341 | 0x2A00 DivmodR5
+342 | 0x2800 DivmodR4
+343 | 0x2200 DivmodR1
+344 | 0x2000 DivmodR0
+345 | 0xC1C0 
+346 | 0x0000 
+347 | 0x0000 
+348 | 0x0000 
+349 | 0x0000 
+350 | 0x0000 
+351 | 0x0000 
+352 | 0x0000 
+353 | 0x0000 
+354 | 0x0000 
+355 | 0x0000 
+356 | 0x0000 
+357 | 0x0000 
+358 | 0x0000 
+359 | 0x0000 
+360 | 0x0000 
+361 | 0x0000 
+362 | 0x0000 
+363 | 0x0000 
+364 | 0x0000 
+365 | 0x0000 
+366 | 0x0000 
+367 | 0x0000 
+368 | 0x0000 
+369 | 0x0000 
+370 | 0x0000 
+371 | 0x0000 
+372 | 0x0000 
+373 | 0x0000 
+374 | 0x0000 
+375 | 0x0000 
+376 | 0x0000 
+377 | 0x0000 
+378 | 0x0000 
+379 | 0x0000 
+380 | 0x0000 
+381 | 0x0001 
+382 | 0x3000 PrintMatrixR0
+383 | 0x3200 PrintMatrixR1
+384 | 0x3400 PrintMatrixR2
+385 | 0x3600 PrintMatrixR3
+386 | 0x3E00 PrintMatrixR7
+387 | 0x2600 THREE
+388 | 0x6280 
+389 | 0x4800 PrintNum
+390 | 0x2000 ASCII_SPACE
+391 | 0xF021 
+392 | 0x14A1 
+393 | 0x6280 
+394 | 0x4800 PrintNum
+395 | 0x2000 ASCII_SPACE
+396 | 0xF021 
+397 | 0x14A1 
+398 | 0x6280 
+399 | 0x4800 PrintNum
+400 | 0x2000 ASCII_NEWLINE
+401 | 0xF021 
+402 | 0x14A1 
+403 | 0x16FF 
+404 | 0x0200 PrintMatrixLoop
+405 | 0x2E00 PrintMatrixR7
+406 | 0x2600 PrintMatrixR3
+407 | 0x2400 PrintMatrixR2
+408 | 0x2200 PrintMatrixR1
+409 | 0x2000 PrintMatrixR0
+410 | 0xC1C0 
+411 | 0x0000 
+412 | 0x0000 
+413 | 0x0000 
+414 | 0x0000 
+415 | 0x0000 
+416 | 0x3000 PrintNumR0
+417 | 0x3200 PrintNumR1
+418 | 0x3400 PrintNumR2
+419 | 0x3600 PrintNumR3
+420 | 0x3800 PrintNumR4
+421 | 0x5241 
+422 | 0x0200 PrintNumPos
+423 | 0x0400 PrintNumDone
+424 | 0x927F 
+425 | 0x1261 
+426 | 0x2000 ASCII_MINUS
+427 | 0xF021 
+428 | 0x54A0 
+429 | 0xE600 PrintNumF5
+430 | 0x68C0 
+431 | 0x2000 ASCII_SLASH
+432 | 0x1021 
+433 | 0x1244 
+434 | 0x0600 PrintNumMod
+435 | 0x993F 
+436 | 0x1921 
+437 | 0x1244 
+438 | 0x5482 
+439 | 0x0200 PrintNumPUTC
+440 | 0x2800 ASCII_NZERO
+441 | 0x1804 
+442 | 0x0400 PrintNumNULL
+443 | 0x14A1 
+444 | 0xF021 
+445 | 0x16E1 
+446 | 0x68C0 
+447 | 0x0800 PrintNumLoop
+448 | 0x2000 ASCII_SLASH
+449 | 0x1021 
+450 | 0x1001 
+451 | 0xF021 
+452 | 0x2800 PrintNumR4
+453 | 0x2600 PrintNumR3
+454 | 0x2400 PrintNumR2
+455 | 0x2200 PrintNumR1
+456 | 0x2000 PrintNumR0
+457 | 0xC1C0 
+458 | 0x002D 
+459 | 0x002F 
+460 | 0xFFD0 
+461 | 0x000A 
+462 | 0x0020 
+463 | 0x0003 
+464 | 0xD8F0 
+465 | 0xFC18 
+466 | 0xFF9C 
+467 | 0xFFF6 
+468 | 0x0000 
+469 | 0x0000 
+470 | 0x0000 
+471 | 0x0000 
+472 | 0x0000 
+473 | 0x0000 
+--------------------------------------------------------
+Symbol table:
+--------------------------------------------------------
+31CA | ASCII_MINUS
+31CD | ASCII_NEWLINE
+31CC | ASCII_NZERO
+31CB | ASCII_SLASH
+31CE | ASCII_SPACE
+3008 | COFACTORLOOP
+30D7 | DET2X2
+30EF | DET2X2R0
+30F0 | DET2X2R1
+30F1 | DET2X2R2
+30F2 | DET2X2R3
+30F3 | DET2X2R4
+30F4 | DET2X2R7
+3025 | DIVLOOP
+3111 | DIVMOD
+314F | DIVMODDONE
+3138 | DIVMODLOOP1
+3142 | DIVMODLOOP2
+3130 | DIVMODNE
+317C | DIVMODNEG
+3128 | DIVMODNOT1
+3133 | DIVMODNOTGE
+3153 | DIVMODPOS
+3176 | DIVMODR0
+311D | DIVMODR0POS
+3177 | DIVMODR1
+3122 | DIVMODR1POS
+3178 | DIVMODR4
+3179 | DIVMODR5
+317A | DIVMODR6
+317B | DIVMODR7
+3149 | DIVMODSKIP
+315A | DIVMODSTACK
+304D | EIGHT
+300E | EVEN
+304B | FIVE
+304A | FOUR
+3041 | MATRIX_ADJ
+302F | MATRIX_IN
+3038 | MATRIX_MIN
+309D | MINMATITER
+30AD | MINMATITERR7
+30AE | MINMATPUSH
+30BC | MINMATR0
+30BD | MINMATR1
+30BE | MINMATR2
+30BF | MINMATR3
+30C0 | MINMATR4
+30C1 | MINMATR5
+30C2 | MINMATR6
+30C3 | MINMATR7
+30B8 | MINMATT11
+30B9 | MINMATT12
+30BA | MINMATT21
+30BB | MINMATT22
+307B | MINORMATRIX
+30F5 | MULT
+3108 | MULTDONE
+30FF | MULTLOOP
+310D | MULTR1
+310E | MULTR2
+310F | MULTR3
+3110 | MULTR4
+3105 | MULTSKIP
+304E | NINE
+317D | ONE
+317E | PRINTMATRIX
+3184 | PRINTMATRIXLOOP
+319B | PRINTMATRIXR0
+319C | PRINTMATRIXR1
+319D | PRINTMATRIXR2
+319E | PRINTMATRIXR3
+319F | PRINTMATRIXR7
+31A0 | PRINTNUM
+31C0 | PRINTNUMDONE
+31D4 | PRINTNUMF0
+31D3 | PRINTNUMF2
+31D2 | PRINTNUMF3
+31D1 | PRINTNUMF4
+31D0 | PRINTNUMF5
+31AF | PRINTNUMLOOP
+31B0 | PRINTNUMMOD
+31BD | PRINTNUMNULL
+31AC | PRINTNUMPOS
+31BC | PRINTNUMPUTC
+31D5 | PRINTNUMR0
+31D6 | PRINTNUMR1
+31D7 | PRINTNUMR2
+31D8 | PRINTNUMR3
+31D9 | PRINTNUMR4
+304F | READMATRIX
+3054 | READMATRIXLOOP
+305E | READMATRIXR0
+305F | READMATRIXR1
+3060 | READMATRIXR2
+3061 | READMATRIXR7
+3062 | READNUM
+3073 | READNUMDONE
+3067 | READNUMLOOP
+3078 | READNUMR0
+3079 | READNUMR2
+307A | READNUMR3
+304C | SEVEN
+31CF | THREE
+3077 | TODIGIT
+30C4 | TRANSPOSE
+30D5 | TRANSPOSER1
+30D6 | TRANSPOSER2
+--------------------------------------------------------

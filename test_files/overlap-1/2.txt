@@ -1,0 +1,10 @@
+.orig x3100
+
+.BLKW xFF
+
+.END
+
+
+.orig x3050
+ADD R0 R1 R2
+.end

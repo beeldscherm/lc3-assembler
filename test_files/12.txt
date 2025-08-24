@@ -1,0 +1,150 @@
+.ORIG x3000
+
+; R6 is the stack pointer
+LD R6, STACK_LAST
+
+JSR READ_NUM
+AND R5, R6, R6 ; R5 stores end of fist number
+
+JSR READ_NUM
+
+JSR ADD_NUMS
+JSR PRINT_RES
+
+HALT
+
+
+; Reads number and puts digits onto stack
+READ_NUM
+    LD R1, ASCII_N_ZERO
+    AND R3, R3, #0
+    ; Mark start with negative number
+    STR R1, R6, #0
+    ADD R6, R6, #-1
+    
+    READ_LOOP
+        GETC
+        PUTC
+
+        ; Check if character is a digit
+        ADD R0, R0, R1
+        BRn READ_DONE
+        BRp NOT_ZERO
+            AND R3, R3, R3
+            BRp NOT_ZERO
+            BRnzp READ_LOOP
+        NOT_ZERO
+        
+        ADD R2, R0, #-9
+        BRp READ_DONE
+
+        ; Push digit onto stack
+        ADD R3, R3, #1
+        STR R0, R6, #0
+        ADD R6, R6, #-1
+        BRnzp READ_LOOP
+
+    READ_DONE
+    AND R3, R3, R3
+    BRnp HAS_READ
+        STR R3, R6, #0
+        ADD R6, R6, #-1
+    HAS_READ RET
+
+; Readnum variables
+ASCII_N_ZERO .FILL x-30
+
+
+; Adds numbers
+ADD_NUMS
+    ; R3 contains carry
+    AND R3, R3, #0
+    LD R4, STACK_FIRST ; Stack pointer for result
+    
+    ADD R5, R5, #1
+    ADD R6, R6, #1
+
+    ADD_LOOP
+        AND R2, R2, #0
+
+        ; Get digit from first number
+        LDR R0, R5 #0
+        BRzp F1ZP ; Check if valid digit
+            AND R0, R0, #0
+            BRnzp F1E
+        F1ZP
+            ADD R2, R2, #1
+            ADD R5, R5, #1
+        F1E
+        
+        ; Get digit from second number
+        LDR R1, R6 #0
+        BRzp F2ZP ; Check if valid digit
+            AND R1, R1, #0
+            BRnzp F2E
+        F2ZP
+            ADD R2, R2, #1
+            ADD R6, R6, #1
+        F2E
+        
+        ; Check if should stop
+        AND R2, R2, R2
+        BRz ADD_FINISH
+
+        ; Add digits and set carry
+        ADD R0, R0, R1
+        ADD R0, R0, R3
+        AND R3, R3, #0
+        ADD R1, R0, #-10
+
+        BRn NO_CARRY
+            ADD R0, R0, #-10
+            ADD R3, R3, #1
+        NO_CARRY
+
+        ; Put new digit on result stack
+        STR R0, R4, #0
+        ADD R4, R4, #1
+        BRnzp ADD_LOOP
+
+    ADD_FINISH
+
+    AND R3, R3, R3
+    BRz ADD_DONE
+        STR R3, R4, #0
+        ADD R4, R4, #1
+    ADD_DONE RET
+
+
+; R4 should point to the last digit of the result
+PRINT_RES
+    LD R1, STACK_N_FIRST
+    LD R2, ASCII_ZERO
+
+    PRINT_LOOP
+        ADD R4, R4, #-1
+        ADD R3, R4, R1
+        BRn PRINT_FINISH
+
+        LDR R0, R4, #0
+        ADD R0, R0, R2
+        PUTC
+        BRnzp PRINT_LOOP
+    PRINT_FINISH
+
+    LD R0, ASCII_NEWLINE
+    PUTC
+    RET
+
+; PrintRes variables
+ASCII_ZERO    .FILL x30
+ASCII_NEWLINE .FILL x0A
+
+; We use a stack that ranges from xD000 to xFDFF
+STACK_FIRST .FILL xA000
+STACK_LAST  .FILL xFDFF
+
+STACK_N_FIRST .FILL x6000
+STACK_N_LAST  .FILL x0201
+
+.END

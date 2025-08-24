@@ -1,0 +1,14 @@
+.ORIG x3000
+
+; Test comment
+AND R0, R0, #10
+
+peter R0, R0, #10
+
+LOOP
+ADD R0, R0, #-1
+BRp LOOP
+
+HALT
+
+.END

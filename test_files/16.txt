@@ -1,0 +1,9 @@
+.ORIG x3000
+
+ADD R0, R0, #5
+BRnzp TEST
+
+TEST  .STRINGZ "Test\n"
+ALLOC .BLKW #4
+SHIFT .FILL x48
+
