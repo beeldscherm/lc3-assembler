@@ -15,9 +15,9 @@
 // This struct is used for working with werid number lengths
 typedef struct Converter {
     unsigned imm5:      5;
-    signed offset6:     6;
-    signed pc_offset9:  9;
-    signed pc_offset11: 11;
+    unsigned offset6:     6;
+    unsigned pc_offset9:  9;
+    unsigned pc_offset11: 11;
 } Converter;
 
 
@@ -115,9 +115,11 @@ void interpretBlkw(LC3_Unit_Ptr unit, const Statement stmt, OptInt *addr) {
 
 // Apply .FILL pseud to unit
 void interpretFill(LC3_Unit *unit, const Statement stmt, OptInt *addr) {
+    OptInt num = getNumber(stmt.args[0], unit->buf.ptr[stmt.line]);
+
     ObjectLine value = {
-        .instr = getNumber(stmt.args[0], unit->buf.ptr[stmt.line]).value,
-        .label = {stmt.line, {0, 0}},
+        .instr = (num.set) ? num.value : 0xFFFF,
+        .label = {stmt.line, {stmt.args[0].start, (num.set) ? 0 : stmt.args[0].sz}},
         .debug = {.line = stmt.line, .tk = getDebugLine(unit, stmt)}
     };
 
@@ -354,6 +356,10 @@ void resolveInstruction(LC3_Unit *unit, ObjectLine *obj, uint16_t addr, uint16_t
             }
 
             obj->instr |= cast.pc_offset9;
+            break;
+        
+        case 0xF: // .FILL
+            obj->instr = label;
             break;
         
         default:

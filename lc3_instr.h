@@ -85,7 +85,7 @@ static const InstructionDefinition INSTRUCTION_LIST[INSTR_AMT] __attribute__((un
         .nameLength = 5,
         .instr = INSTR_PS_FILL,
         .argc = 1,
-        .argl = {TOKEN_NUM},
+        .argl = {TOKEN_NUM | TOKEN_KEY},
     },
     {
         .name = ".STRINGZ",
