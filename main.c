@@ -9,7 +9,7 @@
  * Delegates command-line arguments to the LC3 command interpreter
  */
 
-#include "lc3_cmd.h"
+#include "lc3/lc3_cmd.h"
 
 
 int main(int argc, char **argv) {

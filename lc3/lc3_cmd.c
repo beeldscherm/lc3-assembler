@@ -9,7 +9,7 @@ enum LC3_CommandLineFlag {
     LC3_CMD_FLAG_OBJ     = 0x02,
     LC3_CMD_FLAG_SYMB    = 0x04,
     LC3_CMD_FLAG_DEBUG   = 0x08,
-    LC3_CMD_FLAG_INDENT  = 0x08,
+    LC3_CMD_FLAG_INDENT  = 0x10,
 };
 
 
