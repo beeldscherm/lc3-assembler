@@ -1,4 +1,4 @@
-# LC3TUI
+# LC3-assembler
 
 LC3 assembler and linker
 
