@@ -475,7 +475,7 @@ void LC3_LinkUnits(size_t unitCount, LC3_Unit *units) {
         totalCount += units[i].symb.sz;
         totalSegments += units[i].obj.sz;
     }
-    
+
     SymbolTable combined = newSymbolTableCapacity(totalCount);
 
     for (size_t i = 0; i < unitCount; i++) {

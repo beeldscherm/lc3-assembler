@@ -344,7 +344,7 @@ void resolveInstruction(LC3_Unit *unit, ObjectLine *obj, uint16_t addr, uint16_t
 
         case 0x0: // BR
         case 0x2: // LD
-        case 0x6: // LDI
+        case 0xA: // LDI
         case 0xE: // LEA
         case 0x3: // ST
         case 0xB: // STI
